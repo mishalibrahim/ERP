@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Erp.Module.GL/Erp.Module.GL.csproj" />
+  <Project Path="Erp.Shared/Erp.Shared.csproj" />
+  <Project Path="ERP/ERP.csproj" />
+
+</Solution>
