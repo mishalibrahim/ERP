@@ -1,4 +1,5 @@
 using Erp.Shared.Interfaces;
+using ERP.Interfaces;
 using ERP.Middleware;
 using ERP.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,8 +11,22 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Register our Current User Service so any module can ask "Who is running this code?"
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
+
+// Configure CORS to allow the frontend at http://localhost:5173
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowLocalhost5173",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -19,8 +34,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// 2. Configure JWT Authentication
-var jwtSecretKey = "YourSuperSecretLongKeyThatIsAtLeast32Characters!"; // Move this to appsettings.json later
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"]
+    ?? throw new InvalidOperationException("JWT Secret Key is missing from configuration.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -47,6 +63,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable CORS - must run before authentication/authorization and before routing to controllers
+app.UseCors("AllowLocalhost5173");
 
 app.UseAuthentication();
 app.UseAuthorization();

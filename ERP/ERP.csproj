@@ -17,8 +17,4 @@
     <ProjectReference Include="..\Erp.Shared\Erp.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>
