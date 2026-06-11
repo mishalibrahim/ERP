@@ -1,6 +1,11 @@
-﻿using Erp.Shared.Exceptions;
+﻿using Azure.Core;
+using Erp.Module.Core.Data;
+using Erp.Module.Core.Entities;
+using Erp.Shared.Exceptions;
 using ERP.DTOs.Auth;
 using ERP.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -10,28 +15,39 @@ namespace ERP.Services
 {
     public class AuthService : IAuthService
     {
+        private readonly CoreDbContext _dbContext;
         private readonly IConfiguration _configuration;
-        public AuthService(IConfiguration configuration)
+        private readonly IPasswordHasher<User> _passwordHasher;
+        public AuthService(CoreDbContext dbContext, IConfiguration configuration, IPasswordHasher<User> passwordHasher)
         {
+            _dbContext = dbContext;
             _configuration = configuration;
+            _passwordHasher = passwordHasher;
         }
-        public async Task<AuthResponse> LoginAsync(LoginRequest loginRequest)
+        public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            // Implementation for login logic
-            if (loginRequest.Email != "admin@aegis-erp.com" || loginRequest.Password != "password123")
+            var user = await _dbContext.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive);
+
+            if (user == null)
             {
-                throw new ValidationException("Invalid email or password.");
+                throw new UnauthorizedAccessException("Invalid email or password.");
             }
 
-            var userId = "usr_001";
-            var tenantId = "tenant_AegisFZE";
-            var role = "SuperAdmin";
+            var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                throw new UnauthorizedAccessException("Invalid email or password.");
+            }
+
             var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Email, loginRequest.Email),
-            new Claim(ClaimTypes.Role, role),
-            new Claim("tenant_id", tenantId)
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role),
+            new Claim("tenant_id", user.TenantId)
         };
 
             // 3. SECURE THE TOKEN
@@ -55,7 +71,26 @@ namespace ERP.Services
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
             // Return the final data (Notice we use Task.FromResult because we aren't using async/await just yet)
-            return (new AuthResponse(tokenString, loginRequest.Email, role, tenantId));
+            return new AuthResponse(tokenString, user.Email, user.Role, user.TenantId);
+        }
+        public async Task<UserProfileResponse> GetMyProfileAsync(string userId)
+        {
+            var user = await _dbContext.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+            if (user == null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+            return new UserProfileResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Role = user.Role,
+                TenantId = user.TenantId
+            };
         }
     }
 }

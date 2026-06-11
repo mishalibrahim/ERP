@@ -26,14 +26,13 @@
             }
             [HttpGet("me")]
             [Authorize]
-            public IActionResult GetMyProfile([FromServices] ICurrentUserService currentUser) { 
-                return Ok(new
-                {
-                    Message = "You have successfully breached the mainframe.",
-                    UserId = currentUser.UserId,
-                    TenantId = currentUser.TenantId,
-                    IsSuperAdmin = currentUser.IsSuperAdmin
-                });
+            public async Task<IActionResult> GetMyProfile([FromServices] ICurrentUserService currentUser) {
+            if(currentUser.UserId == null)
+            {
+                return Unauthorized();
             }
+            var response = await _authService.GetMyProfileAsync(currentUser.UserId);
+                return Ok(response);
+        }
         }
     }
