@@ -4,6 +4,8 @@ using ERP.DTOs.CompanySetup;
 using ERP.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ERP.Services
@@ -15,6 +17,52 @@ namespace ERP.Services
         public CompanySetupService(CoreDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<CompanyListItemDto>> GetAllAsync()
+        {
+            return await _context.Tenants
+                .Where(t => t.IsActive)
+                .Select(t => new CompanyListItemDto
+                {
+                    Id = t.Id,
+                    CompanyName = t.CompanyName,
+                    TradeName = t.TradeName,
+                    CompanyCode = t.CompanyCode,
+                    LicenseNumber = t.LicenseNumber,
+                    LicenseType = t.LicenseType,
+                    Country = t.Country,
+                    Emirate = t.Emirate,
+                    Status = t.Status,
+                    RegistrationDate = t.RegistrationDate,
+                    CreatedAt = t.CreatedAt,
+                    UpdatedAt = t.UpdatedAt
+                }).ToListAsync();
+        }
+
+        public async Task<CompanyListItemDto?> GetByIdAsync(string id)
+        {
+            var tenant = await _context.Tenants
+                .Where(t => t.IsActive && t.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (tenant == null) return null;
+
+            return new CompanyListItemDto
+            {
+                Id = tenant.Id,
+                CompanyName = tenant.CompanyName,
+                TradeName = tenant.TradeName,
+                CompanyCode = tenant.CompanyCode,
+                LicenseNumber = tenant.LicenseNumber,
+                LicenseType = tenant.LicenseType,
+                Country = tenant.Country,
+                Emirate = tenant.Emirate,
+                Status = tenant.Status,
+                RegistrationDate = tenant.RegistrationDate,
+                CreatedAt = tenant.CreatedAt,
+                UpdatedAt = tenant.UpdatedAt
+            };
         }
 
         public async Task<string> CreateDraftAsync(CreateCompanyDto dto)
@@ -32,7 +80,9 @@ namespace ERP.Services
                 Emirate = dto.Emirate,
                 IsFreeZoneEntity = dto.IsFreeZoneEntity,
                 IsDesignatedZone = dto.IsDesignatedZone,
-                Status = "Draft"
+                Status = "Draft",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Tenants.Add(tenant);
@@ -43,7 +93,7 @@ namespace ERP.Services
 
         public async Task<bool> UpdateCompanyAsync(string id, UpdateCompanyDto dto)
         {
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
             
             if (tenant == null)
             {
@@ -140,6 +190,23 @@ namespace ERP.Services
                 if (dto.Controls.ApprovalWorkflow.HasValue) tenant.Controls.ApprovalWorkflow = dto.Controls.ApprovalWorkflow.Value;
             }
 
+            tenant.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(string id)
+        {
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+            
+            if (tenant == null)
+            {
+                return false;
+            }
+
+            tenant.IsActive = false;
+            tenant.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return true;

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,6 +22,10 @@ namespace Erp.Module.Core.Entities
             public bool IsDesignatedZone { get; set; }
 
             public string Status { get; set; } = "Draft";
+            
+            public bool IsActive { get; set; } = true;
+            public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+            public DateTime? UpdatedAt { get; set; }
 
             // FLATTENED 1-TO-1 SECTIONS (Owned Types)
             public FinancialSetup Financials { get; set; } = new();         // Step 2
