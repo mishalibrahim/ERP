@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,9 +8,11 @@ namespace Erp.Module.Core.Entities
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        // 1. Multi-Tenancy Links
-        public string TenantId { get; set; } = string.Empty;
-        public Tenant? Tenant { get; set; } // <-- Added this
+        // 1. Multi-Tenancy Links (Home Tenant)
+        public string? TenantId { get; set; }
+        public Tenant? Tenant { get; set; } 
+
+        public ICollection<UserTenantAccess> TenantAccesses { get; set; } = new List<UserTenantAccess>();
 
         // Basic Info
         public string Email { get; set; } = string.Empty;

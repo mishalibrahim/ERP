@@ -22,8 +22,12 @@ builder.Services.AddScoped<ICompanySetupService, CompanySetupService>();
 
 // db connections
 builder.Services.AddDbContext<CoreDbContext>(options =>
+{
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-    sqlOptions => sqlOptions.MigrationsAssembly("Erp.Module.Core")));
+    sqlOptions => sqlOptions.MigrationsAssembly("Erp.Module.Core"));
+    options.EnableSensitiveDataLogging();
+    options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+});
 
 builder.Services.AddControllers();
 

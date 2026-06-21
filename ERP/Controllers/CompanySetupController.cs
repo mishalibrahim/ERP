@@ -27,7 +27,7 @@ namespace ERP.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<CompanyListItemDto>> GetById(string id)
+        public async Task<ActionResult<CompanyDetailsDto>> GetById(string id)
         {
             var tenant = await _companySetupService.GetByIdAsync(id);
             if (tenant == null)
@@ -40,21 +40,128 @@ namespace ERP.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateDraft([FromBody] CreateCompanyDto dto)
         {
-            var id = await _companySetupService.CreateDraftAsync(dto);
-            return Ok(new { id = id, message = "Company draft created successfully." });
+            var result = await _companySetupService.CreateDraftAsync(dto);
+            return Ok(new { id = result.Id, message = "Company draft created successfully.", rowVersion = Convert.ToBase64String(result.RowVersion) });
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCompany(string id, [FromBody] UpdateCompanyDto dto)
+        [HttpPut("{id}/general")]
+        public async Task<IActionResult> UpdateGeneral(string id, [FromBody] UpdateCompanyGeneralDto dto)
         {
-            var success = await _companySetupService.UpdateCompanyAsync(id, dto);
-            
-            if (!success)
+            try
             {
-                return NotFound("Company not found or access denied.");
+                var newRowVersion = await _companySetupService.UpdateGeneralInfoAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "General info updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
             }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
 
-            return Ok(new { message = "Company draft updated successfully." });
+        [HttpPut("{id}/financials")]
+        public async Task<IActionResult> UpdateFinancials(string id, [FromBody] UpdateCompanyFinancialsDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateFinancialsAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Financials updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/localization")]
+        public async Task<IActionResult> UpdateLocalization(string id, [FromBody] UpdateCompanyLocalizationDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateLocalizationAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Localization updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/addresses")]
+        public async Task<IActionResult> UpdateAddresses(string id, [FromBody] UpdateCompanyAddressesDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateAddressesAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Addresses updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/taxes")]
+        public async Task<IActionResult> UpdateTaxes(string id, [FromBody] UpdateCompanyTaxesDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateTaxesAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Taxes updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/system-controls")]
+        public async Task<IActionResult> UpdateSystemControls(string id, [FromBody] UpdateCompanySystemControlsDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateSystemControlsAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "System controls updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/bank-accounts")]
+        public async Task<IActionResult> UpdateBankAccounts(string id, [FromBody] UpdateCompanyBankAccountsDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateBankAccountsAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Bank accounts updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
+        }
+
+        [HttpPut("{id}/users")]
+        public async Task<IActionResult> UpdateUsers(string id, [FromBody] UpdateCompanyUsersDto dto)
+        {
+            try
+            {
+                var newRowVersion = await _companySetupService.UpdateUsersAsync(id, dto);
+                if (newRowVersion == null) return NotFound("Company not found or access denied.");
+                return Ok(new { message = "Users updated successfully.", rowVersion = Convert.ToBase64String(newRowVersion) });
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "Another user has updated this record. Please refresh and try again." });
+            }
         }
 
         [HttpDelete("{id}")]
