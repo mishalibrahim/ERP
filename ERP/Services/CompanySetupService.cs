@@ -50,7 +50,7 @@ namespace ERP.Services
                 .Include(t => t.TaxGroups).ThenInclude(tg => tg.TaxRates)
                 .Include(t => t.DocumentNumberSeries)
                 .Include(t => t.PostingGroups)
-                .Include(t => t.UserTenantAccesses)
+                .Include(t => t.UserTenantAccesses).ThenInclude(u => u.User)
                 .Where(t => t.IsActive && t.Id == id)
                 .FirstOrDefaultAsync();
 
@@ -199,6 +199,9 @@ namespace ERP.Services
                 {
                     Id = u.Id,
                     UserId = u.UserId,
+                    Email = u.User?.Email ?? string.Empty,
+                    FirstName = u.User?.FirstName,
+                    LastName = u.User?.LastName,
                     Role = u.Role,
                     IsActive = u.IsActive
                 }).ToList()
@@ -687,6 +690,7 @@ namespace ERP.Services
             if (dto.UserTenantAccess != null)
             {
                 var existingUta = await _context.UserTenantAccesses
+                    .Include(u => u.User)
                     .Where(u => u.TenantId == id)
                     .ToListAsync();
 
@@ -704,6 +708,17 @@ namespace ERP.Services
                         {
                             existing.Role = utaDto.Role;
                             existing.IsActive = utaDto.IsActive;
+
+                            if (existing.User != null)
+                            {
+                                if (!string.IsNullOrEmpty(utaDto.FirstName)) existing.User.FirstName = utaDto.FirstName;
+                                if (utaDto.LastName != null) existing.User.LastName = utaDto.LastName;
+                                
+                                if (!string.IsNullOrEmpty(utaDto.Password))
+                                {
+                                    existing.User.PasswordHash = _passwordHasher.HashPassword(existing.User, utaDto.Password);
+                                }
+                            }
                         }
                     }
                     else
@@ -714,9 +729,10 @@ namespace ERP.Services
                         {
                             user = new User
                             {
+                                TenantId = id, // Set the Home Tenant
                                 Email = utaDto.Email,
-                                FirstName = utaDto.Email.Split('@')[0], 
-                                LastName = "",
+                                FirstName = !string.IsNullOrEmpty(utaDto.FirstName) ? utaDto.FirstName : utaDto.Email.Split('@')[0], 
+                                LastName = utaDto.LastName ?? "",
                                 Role = utaDto.Role,
                                 IsActive = true,
                                 CreatedAt = DateTime.UtcNow
