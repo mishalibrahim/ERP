@@ -18,6 +18,7 @@ namespace Erp.Module.Core.Entities
             public DateTime? LicenseExpiryDate { get; set; }
             public string Country { get; set; } = "UAE";
             public string Emirate { get; set; } = string.Empty;
+            public string? PlaceOfIncorporation { get; set; }
             public bool IsFreeZoneEntity { get; set; }
             public bool IsDesignatedZone { get; set; }
 
@@ -27,6 +28,9 @@ namespace Erp.Module.Core.Entities
             public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
             public DateTime? UpdatedAt { get; set; }
 
+            [System.ComponentModel.DataAnnotations.Timestamp]
+            public byte[] RowVersion { get; set; }
+
             // FLATTENED 1-TO-1 SECTIONS (Owned Types)
             public FinancialSetup Financials { get; set; } = new();         // Step 2
             public LocalizationSetup Localization { get; set; } = new();    // Step 3
@@ -34,12 +38,18 @@ namespace Erp.Module.Core.Entities
             public AddressDetails BillingAddress { get; set; } = new();     // Step 4b
             public VatSetup VatDetails { get; set; } = new();               // Step 5
             public CorporateTaxSetup CorporateTax { get; set; } = new();    // Step 6
+            public TaxSetup TaxConfiguration { get; set; } = new();         // Step 7
             public SystemControls Controls { get; set; } = new();           // Step 8
             public DocumentManagement Documents { get; set; } = new();      // Step 11
 
             // RELATIONAL 1-TO-MANY SECTIONS (Separate Tables)
             public List<BankAccount> BankAccounts { get; set; } = new();    // Step 9
-                                                                            // Note: Step 10 (Users) is handled by the User.cs entity we already built!
+            public ICollection<TaxGroup> TaxGroups { get; set; } = new List<TaxGroup>();
+            public ICollection<DocumentNumberSeries> DocumentNumberSeries { get; set; } = new List<DocumentNumberSeries>();
+            public ICollection<PostingGroup> PostingGroups { get; set; } = new List<PostingGroup>();
+            public ICollection<UserTenantAccess> UserTenantAccesses { get; set; } = new List<UserTenantAccess>();
+            
+            // Note: Step 10 (Users) is handled by UserTenantAccess mapping
         }
 
         // --- THE 1-TO-1 OWNED TYPES (Flattened into the Tenants table) ---
@@ -48,6 +58,7 @@ namespace Erp.Module.Core.Entities
         public class FinancialSetup
         {
             public DateTime? FinancialYearStart { get; set; }
+            public DateTime? FinancialYearEnd { get; set; }
             public DateTime? BooksStartDate { get; set; }
             public string AccountingMethod { get; set; } = "Accrual";
             public string FiscalYear { get; set; } = "Jan-Dec";
@@ -59,6 +70,7 @@ namespace Erp.Module.Core.Entities
         public class LocalizationSetup
         {
             public string OrganizationLanguage { get; set; } = "English";
+            public List<string> CommunicationLanguages { get; set; } = new();
             public string InvoiceLanguage { get; set; } = "English";
             public string TimeZone { get; set; } = "Asia/Dubai";
             public string DateFormat { get; set; } = "DD/MM/YYYY";
@@ -86,6 +98,9 @@ namespace Erp.Module.Core.Entities
             public string VatScheme { get; set; } = "Standard";
             public string FilingFrequency { get; set; } = "Quarterly";
             public DateTime? VatRegistrationDate { get; set; }
+            public DateTime? FirstVatPeriod { get; set; }
+            public DateTime? VatReturnStartPeriod { get; set; }
+            public DateTime? VatDeregistrationDate { get; set; }
         }
 
         [Owned]
@@ -105,6 +120,16 @@ namespace Erp.Module.Core.Entities
             public bool MultiCompanyEnable { get; set; } = false;
             public bool AuditTrailEnable { get; set; } = true;
             public bool ApprovalWorkflow { get; set; } = false;
+            public string? DefaultCostCenterId { get; set; }
+            public string? DefaultProjectId { get; set; }
+        }
+
+        [Owned]
+        public class TaxSetup
+        {
+            public Guid? DefaultVatRateId { get; set; }
+            public string? InputVatAccountId { get; set; }
+            public string? OutputVatAccountId { get; set; }
         }
 
         [Owned]

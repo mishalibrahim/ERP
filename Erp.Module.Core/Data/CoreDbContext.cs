@@ -1,4 +1,4 @@
-﻿using Erp.Module.Core.Entities;
+using Erp.Module.Core.Entities;
 using Erp.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,6 +18,12 @@ namespace Erp.Module.Core.Data
         }
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<TaxGroup> TaxGroups { get; set; }
+        public DbSet<TaxRate> TaxRates { get; set; }
+        public DbSet<DocumentNumberSeries> DocumentNumberSeries { get; set; }
+        public DbSet<PostingGroup> PostingGroups { get; set; }
+        public DbSet<UserTenantAccess> UserTenantAccesses { get; set; }
+        public DbSet<BankAccount> BankAccounts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,9 +35,27 @@ namespace Erp.Module.Core.Data
             modelBuilder.Entity<Tenant>()
                 .HasQueryFilter(t => _currentUser.IsSuperAdmin || t.Id == _currentUser.TenantId);
 
+            // Multi-tenancy Query Filters
+            modelBuilder.Entity<TaxGroup>()
+                .HasQueryFilter(x => _currentUser.IsSuperAdmin || x.TenantId == _currentUser.TenantId);
+                
+            modelBuilder.Entity<DocumentNumberSeries>()
+                .HasQueryFilter(x => _currentUser.IsSuperAdmin || x.TenantId == _currentUser.TenantId);
+                
+            modelBuilder.Entity<PostingGroup>()
+                .HasQueryFilter(x => _currentUser.IsSuperAdmin || x.TenantId == _currentUser.TenantId);
+
+            modelBuilder.Entity<UserTenantAccess>()
+                .HasQueryFilter(x => _currentUser.IsSuperAdmin || x.TenantId == _currentUser.TenantId);
+
+            modelBuilder.Entity<BankAccount>()
+                .HasQueryFilter(x => _currentUser.IsSuperAdmin || x.TenantId == _currentUser.TenantId);
+
             modelBuilder.Entity<Tenant>()
                 .HasIndex(t => t.CompanyCode)
                 .IsUnique();
+
+
             modelBuilder.Entity<Tenant>()
                 .OwnsOne(t => t.VatDetails)
                 .Property(v => v.TrnNumber)

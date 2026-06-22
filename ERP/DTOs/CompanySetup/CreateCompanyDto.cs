@@ -34,6 +34,9 @@ namespace ERP.DTOs.CompanySetup
         [MaxLength(100)]
         public string Emirate { get; set; } = string.Empty;
         
+        [MaxLength(100)]
+        public string? PlaceOfIncorporation { get; set; }
+        
         public bool IsFreeZoneEntity { get; set; }
         public bool IsDesignatedZone { get; set; }
     }

@@ -4,6 +4,7 @@ using Erp.Module.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Erp.Module.Core.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    partial class CoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260616174239_AddScalableCompanySetup")]
+    partial class AddScalableCompanySetup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,7 +64,7 @@ namespace Erp.Module.Core.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("BankAccounts");
+                    b.ToTable("BankAccount");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.DocumentNumberSeries", b =>
@@ -242,12 +245,6 @@ namespace Erp.Module.Core.Migrations
 
                     b.Property<DateTime>("RegistrationDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -753,7 +750,7 @@ namespace Erp.Module.Core.Migrations
             modelBuilder.Entity("Erp.Module.Core.Entities.UserTenantAccess", b =>
                 {
                     b.HasOne("Erp.Module.Core.Entities.Tenant", "Tenant")
-                        .WithMany("UserTenantAccesses")
+                        .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -783,8 +780,6 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("PostingGroups");
 
                     b.Navigation("TaxGroups");
-
-                    b.Navigation("UserTenantAccesses");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.User", b =>
