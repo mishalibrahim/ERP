@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {
@@ -8,7 +9,7 @@ namespace Erp.Module.Core.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
 
         // Multi-tenancy link
-        public string TenantId { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
         public Tenant? Tenant { get; set; }
 
         public string Name { get; set; } = string.Empty; // e.g., "Standard", "Exempt", "Zero-Rated"

@@ -1,4 +1,5 @@
 using System;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {

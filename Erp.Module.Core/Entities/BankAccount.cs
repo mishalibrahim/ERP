@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {
@@ -9,7 +10,7 @@ namespace Erp.Module.Core.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
 
         // This connects the bank account back to the specific Company
-        public string TenantId { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
         public Tenant? Tenant { get; set; }
 
         public bool IsPrimary { get; set; } = false; // "Provide Primary bank" requirement

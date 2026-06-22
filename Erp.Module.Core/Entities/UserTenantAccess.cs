@@ -1,4 +1,5 @@
 using System;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {
@@ -6,14 +7,15 @@ namespace Erp.Module.Core.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public string UserId { get; set; } = string.Empty;
+        public Guid UserId { get; set; }
         public User? User { get; set; }
 
-        public string TenantId { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
         public Tenant? Tenant { get; set; }
 
-        // Specific role for this tenant (e.g., "Admin", "Accountant", "Auditor")
-        public string Role { get; set; } = "User";
+        // FK to the RBAC Role for this tenant
+        public Guid RoleId { get; set; }
+        public Role? Role { get; set; }
 
         public bool IsActive { get; set; } = true;
     }
