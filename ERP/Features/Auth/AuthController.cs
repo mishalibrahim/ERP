@@ -23,15 +23,43 @@
                 var response = await _authService.LoginAsync(request);
                 return Ok(response);
             }
-            [HttpGet("me")]
-            [Authorize]
-            public async Task<IActionResult> GetMyProfile([FromServices] ICurrentUserService currentUser) {
-            if(currentUser.UserId == null)
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMyProfile([FromServices] ICurrentUserService currentUser)
+        {
+            if (currentUser.UserId == null)
             {
                 return Unauthorized();
             }
             var response = await _authService.GetMyProfileAsync(currentUser.UserId.Value);
+            return Ok(response);
+        }
+
+        [HttpGet("my-tenants")]
+        [Authorize]
+        public async Task<IActionResult> GetMyTenants([FromServices] ICurrentUserService currentUser)
+        {
+            if (currentUser.UserId == null) return Unauthorized();
+
+            var response = await _authService.GetMyTenantsAsync(currentUser.UserId.Value, currentUser.IsSuperAdmin);
+            return Ok(response);
+        }
+
+        [HttpPost("switch-tenant")]
+        [Authorize]
+        public async Task<IActionResult> SwitchTenant([FromBody] SwitchTenantRequestDto request, [FromServices] ICurrentUserService currentUser)
+        {
+            if (currentUser.UserId == null) return Unauthorized();
+
+            try
+            {
+                var response = await _authService.SwitchTenantAsync(currentUser.UserId.Value, request.TargetTenantId, currentUser.IsSuperAdmin);
                 return Ok(response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
-        }
+    }
     }

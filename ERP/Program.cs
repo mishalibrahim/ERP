@@ -1,6 +1,7 @@
 using Erp.Module.Core;
 using Erp.Module.Core.Data;
 using Erp.Module.Core.Entities;
+using Erp.Module.GL;
 using Erp.Shared.Interfaces;
 using ERP.Features;
 using ERP.Infrastructure.Middleware;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register Modules
 builder.Services.AddCoreModule(builder.Configuration);
+builder.Services.AddGlModuleServices(builder.Configuration);
 
 // Register Features
 builder.Services.AddFeatureServices();

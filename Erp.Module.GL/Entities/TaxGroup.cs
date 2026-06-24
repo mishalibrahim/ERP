@@ -2,20 +2,20 @@ using System;
 using System.Collections.Generic;
 using Erp.Shared.Entities;
 
-namespace Erp.Module.Core.Entities
+namespace Erp.Module.GL.Entities
 {
-    public class TaxGroup
+    public class TaxGroup : BaseEntity
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-        // Multi-tenancy link
         public Guid TenantId { get; set; }
-        public Tenant? Tenant { get; set; }
 
         public string Name { get; set; } = string.Empty; // e.g., "Standard", "Exempt", "Zero-Rated"
         public string? Description { get; set; }
         
-        public bool IsActive { get; set; } = true;
+        public Guid? InputVatAccountId { get; set; }
+        public GlAccount? InputVatAccount { get; set; }
+        
+        public Guid? OutputVatAccountId { get; set; }
+        public GlAccount? OutputVatAccount { get; set; }
 
         public ICollection<TaxRate> TaxRates { get; set; } = new List<TaxRate>();
     }

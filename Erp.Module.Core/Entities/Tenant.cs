@@ -39,7 +39,6 @@ namespace Erp.Module.Core.Entities
 
             // RELATIONAL 1-TO-MANY SECTIONS (Separate Tables)
             public List<BankAccount> BankAccounts { get; set; } = new();    // Step 9
-            public ICollection<TaxGroup> TaxGroups { get; set; } = new List<TaxGroup>();
             public ICollection<DocumentNumberSeries> DocumentNumberSeries { get; set; } = new List<DocumentNumberSeries>();
             public ICollection<PostingGroup> PostingGroups { get; set; } = new List<PostingGroup>();
             public ICollection<UserTenantAccess> UserTenantAccesses { get; set; } = new List<UserTenantAccess>();

@@ -1,12 +1,10 @@
 using System;
 using Erp.Shared.Entities;
 
-namespace Erp.Module.Core.Entities
+namespace Erp.Module.GL.Entities
 {
-    public class TaxRate
+    public class TaxRate : BaseEntity
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-
         public Guid TaxGroupId { get; set; }
         public TaxGroup? TaxGroup { get; set; }
 
@@ -14,7 +12,5 @@ namespace Erp.Module.Core.Entities
         
         public DateTime EffectiveFrom { get; set; }
         public DateTime? EffectiveTo { get; set; }
-
-        public bool IsActive { get; set; } = true;
     }
 }

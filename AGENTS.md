@@ -11,7 +11,9 @@
 * The system is split into logical modules (e.g., `Erp.Module.Core`, `Erp.Module.GL`) as Class Libraries.
 * The main `ERP` project acts as the API host and Startup Project.
 * EF Core migrations belong strictly to their respective modules, delegated via `MigrationsAssembly`.
-* DTOs should be grouped in feature-based folders under the main ERP project (e.g., `ERP/DTOs/FeatureName/`).
+* **Vertical Slice Architecture:** The main API project groups files by feature (e.g., `ERP/Features/Auth/`), not by type. A feature folder contains its Controller, Service, Interface, and a `DTOs/` subfolder.
+* **Shared Entities:** Entities that need to be referenced across multiple modules (like `BaseEntity` or `Permissions`) belong in `Erp.Shared`.
+* **Modular Dependency Injection:** Each module/feature must have its own `DependencyInjection.cs` with an extension method (e.g., `AddFeatureServices()`) to keep `Program.cs` clean.
 
 ## 3. Database & Entity Rules
 * **Wide Tables over JOINs:** For 1-to-1 relationships (like Company Financial Setup or VAT details), we use EF Core `[Owned]` types to flatten data into Wide Tables for blazing-fast read performance.

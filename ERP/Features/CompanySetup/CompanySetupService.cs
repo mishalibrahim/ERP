@@ -1,5 +1,7 @@
 using Erp.Module.Core.Data;
 using Erp.Module.Core.Entities;
+using Erp.Module.GL.Data;
+using Erp.Module.GL.Entities;
 using ERP.Features.CompanySetup.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -13,17 +15,27 @@ namespace ERP.Features.CompanySetup
     public class CompanySetupService : ICompanySetupService
     {
         private readonly CoreDbContext _context;
+        private readonly GlDbContext _glContext;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly Erp.Shared.Interfaces.ICurrentUserService _currentUserService;
 
-        public CompanySetupService(CoreDbContext context, IPasswordHasher<User> passwordHasher = null)
+        public CompanySetupService(CoreDbContext context, GlDbContext glContext, Erp.Shared.Interfaces.ICurrentUserService currentUserService, IPasswordHasher<User> passwordHasher = null)
         {
             _context = context;
+            _glContext = glContext;
+            _currentUserService = currentUserService;
             _passwordHasher = passwordHasher ?? new PasswordHasher<User>();
         }
 
         public async Task<List<CompanyListItemDto>> GetAllAsync()
         {
-            return await _context.Tenants
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin)
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
+            return await query
                 .Where(t => t.IsActive)
                 .Select(t => new CompanyListItemDto
                 {
@@ -44,9 +56,14 @@ namespace ERP.Features.CompanySetup
 
         public async Task<CompanyDetailsDto?> GetByIdAsync(Guid id)
         {
-            var tenant = await _context.Tenants
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin)
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
+            var tenant = await query
                 .Include(t => t.BankAccounts)
-                .Include(t => t.TaxGroups).ThenInclude(tg => tg.TaxRates)
                 .Include(t => t.DocumentNumberSeries)
                 .Include(t => t.PostingGroups)
                 .Include(t => t.UserTenantAccesses).ThenInclude(u => u.User)
@@ -54,6 +71,17 @@ namespace ERP.Features.CompanySetup
                 .FirstOrDefaultAsync();
 
             if (tenant == null) return null;
+
+            var taxQuery = _glContext.TaxGroups.AsQueryable();
+            if (_currentUserService.IsSuperAdmin)
+            {
+                taxQuery = taxQuery.IgnoreQueryFilters();
+            }
+
+            var taxGroups = await taxQuery
+                .Include(tg => tg.TaxRates)
+                .Where(tg => tg.TenantId == id && tg.IsActive)
+                .ToListAsync();
 
             return new CompanyDetailsDto
             {
@@ -159,7 +187,7 @@ namespace ERP.Features.CompanySetup
                     SwiftCode = b.SwiftCode,
                     Currency = b.Currency
                 }).ToList(),
-                TaxGroups = tenant.TaxGroups.Select(tg => new TaxGroupDto
+                TaxGroups = taxGroups.Select(tg => new TaxGroupDto
                 {
                     Id = tg.Id,
                     Name = tg.Name,
@@ -238,10 +266,13 @@ namespace ERP.Features.CompanySetup
         private async Task<Tenant?> GetTenantForUpdateAsync(Guid id)
         {
             // Only loads the Tenant row + owned types (flattened columns).
-            // Child collections (BankAccounts, TaxGroups, etc.) are loaded
-            // directly via their DbSets in each update method to avoid
-            // phantom Tenant UPDATEs from EF Core relationship fixup.
-            return await _context.Tenants
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin)
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
+            return await query
                 .FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
         }
 
@@ -391,17 +422,20 @@ namespace ERP.Features.CompanySetup
             if (dto.InputVatAccountId != null) tenant.TaxConfiguration.InputVatAccountId = dto.InputVatAccountId;
             if (dto.OutputVatAccountId != null) tenant.TaxConfiguration.OutputVatAccountId = dto.OutputVatAccountId;
 
-            // TaxGroups + TaxRates (child collections — use direct DbSet access)
+            // TaxGroups + TaxRates (child collections — use direct DbSet access via _glContext)
             if (dto.TaxGroups != null)
             {
-                var existingGroups = await _context.TaxGroups
+                var taxQuery = _glContext.TaxGroups.AsQueryable();
+                if (_currentUserService.IsSuperAdmin) taxQuery = taxQuery.IgnoreQueryFilters();
+
+                var existingGroups = await taxQuery
                     .Include(tg => tg.TaxRates)
                     .Where(tg => tg.TenantId == id)
                     .ToListAsync();
 
                 var incomingTgIds = dto.TaxGroups.Where(tg => tg.Id.HasValue).Select(tg => tg.Id.Value).ToList();
                 var removedGroups = existingGroups.Where(tg => !incomingTgIds.Contains(tg.Id)).ToList();
-                _context.RemoveRange(removedGroups);
+                _glContext.RemoveRange(removedGroups);
 
                 foreach (var tgDto in dto.TaxGroups)
                 {
@@ -416,7 +450,7 @@ namespace ERP.Features.CompanySetup
 
                             var incomingRateIds = tgDto.TaxRates.Where(tr => tr.Id.HasValue).Select(tr => tr.Id.Value).ToList();
                             var removedRates = existingTg.TaxRates.Where(tr => !incomingRateIds.Contains(tr.Id)).ToList();
-                            _context.RemoveRange(removedRates);
+                            _glContext.RemoveRange(removedRates);
 
                             foreach (var trDto in tgDto.TaxRates)
                             {
@@ -433,7 +467,7 @@ namespace ERP.Features.CompanySetup
                                 }
                                 else
                                 {
-                                    _context.TaxRates.Add(new TaxRate
+                                    _glContext.TaxRates.Add(new TaxRate
                                     {
                                         TaxGroupId = existingTg.Id,
                                         RatePercentage = trDto.RatePercentage,
@@ -454,11 +488,11 @@ namespace ERP.Features.CompanySetup
                             Description = tgDto.Description,
                             IsActive = tgDto.IsActive
                         };
-                        _context.TaxGroups.Add(newTg);
+                        _glContext.TaxGroups.Add(newTg);
 
                         foreach (var trDto in tgDto.TaxRates)
                         {
-                            _context.TaxRates.Add(new TaxRate
+                            _glContext.TaxRates.Add(new TaxRate
                             {
                                 TaxGroupId = newTg.Id,
                                 RatePercentage = trDto.RatePercentage,
@@ -472,12 +506,16 @@ namespace ERP.Features.CompanySetup
             }
 
             await _context.SaveChangesAsync();
+            await _glContext.SaveChangesAsync();
             return tenant.RowVersion;
         }
 
         public async Task<byte[]?> UpdateSystemControlsAsync(Guid id, UpdateCompanySystemControlsDto dto)
         {
-            var tenantInfo = await _context.Tenants.AsNoTracking()
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin) query = query.IgnoreQueryFilters();
+
+            var tenantInfo = await query.AsNoTracking()
                 .Where(t => t.Id == id && t.IsActive)
                 .Select(t => new { t.RowVersion })
                 .FirstOrDefaultAsync();
@@ -490,7 +528,7 @@ namespace ERP.Features.CompanySetup
             }
 
             // We need the tracked Tenant ONLY for owned types, NOT children
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+            var tenant = await query.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
             if (tenant != null)
             {
                 if (dto.MultiCompanyEnable.HasValue) tenant.Controls.MultiCompanyEnable = dto.MultiCompanyEnable.Value;
@@ -503,7 +541,10 @@ namespace ERP.Features.CompanySetup
             // Document Number Series
             if (dto.DocumentNumberSeries != null)
             {
-                var existingDocs = await _context.DocumentNumberSeries
+                var docQuery = _context.DocumentNumberSeries.AsQueryable();
+                if (_currentUserService.IsSuperAdmin) docQuery = docQuery.IgnoreQueryFilters();
+
+                var existingDocs = await docQuery
                     .Where(d => d.TenantId == id)
                     .ToListAsync();
 
@@ -543,7 +584,10 @@ namespace ERP.Features.CompanySetup
             // Posting Groups
             if (dto.PostingGroups != null)
             {
-                var existingPg = await _context.PostingGroups
+                var pgQuery = _context.PostingGroups.AsQueryable();
+                if (_currentUserService.IsSuperAdmin) pgQuery = pgQuery.IgnoreQueryFilters();
+
+                var existingPg = await pgQuery
                     .Where(p => p.TenantId == id)
                     .ToListAsync();
 
@@ -586,7 +630,7 @@ namespace ERP.Features.CompanySetup
 
             await _context.SaveChangesAsync();
 
-            var currentRv = await _context.Tenants.AsNoTracking()
+            var currentRv = await query.AsNoTracking()
                 .Where(t => t.Id == id)
                 .Select(t => t.RowVersion)
                 .FirstAsync();
@@ -595,8 +639,11 @@ namespace ERP.Features.CompanySetup
 
         public async Task<byte[]?> UpdateBankAccountsAsync(Guid id, UpdateCompanyBankAccountsDto dto)
         {
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin) query = query.IgnoreQueryFilters();
+
             // Concurrency check: read RowVersion without tracking the Tenant entity
-            var tenantInfo = await _context.Tenants.AsNoTracking()
+            var tenantInfo = await query.AsNoTracking()
                 .Where(t => t.Id == id && t.IsActive)
                 .Select(t => new { t.RowVersion })
                 .FirstOrDefaultAsync();
@@ -610,8 +657,11 @@ namespace ERP.Features.CompanySetup
 
             if (dto.BankAccounts != null)
             {
+                var bankQuery = _context.BankAccounts.AsQueryable();
+                if (_currentUserService.IsSuperAdmin) bankQuery = bankQuery.IgnoreQueryFilters();
+
                 // Load existing bank accounts directly (NOT through Tenant navigation)
-                var existingBanks = await _context.BankAccounts
+                var existingBanks = await bankQuery
                     .Where(b => b.TenantId == id)
                     .ToListAsync();
 
@@ -656,7 +706,7 @@ namespace ERP.Features.CompanySetup
             await _context.SaveChangesAsync();
 
             // Return the current RowVersion (it hasn't changed since we didn't touch Tenant)
-            var currentRv = await _context.Tenants.AsNoTracking()
+            var currentRv = await query.AsNoTracking()
                 .Where(t => t.Id == id)
                 .Select(t => t.RowVersion)
                 .FirstAsync();
@@ -665,7 +715,10 @@ namespace ERP.Features.CompanySetup
 
         public async Task<byte[]?> UpdateUsersAsync(Guid id, UpdateCompanyUsersDto dto)
         {
-            var tenantInfo = await _context.Tenants.AsNoTracking()
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin) query = query.IgnoreQueryFilters();
+
+            var tenantInfo = await query.AsNoTracking()
                 .Where(t => t.Id == id && t.IsActive)
                 .Select(t => new { t.RowVersion })
                 .FirstOrDefaultAsync();
@@ -680,7 +733,7 @@ namespace ERP.Features.CompanySetup
             // We need the tracked Tenant ONLY if Status is being updated
             if (!string.IsNullOrEmpty(dto.Status))
             {
-                var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+                var tenant = await query.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
                 if (tenant != null)
                 {
                     tenant.Status = dto.Status;
@@ -689,7 +742,10 @@ namespace ERP.Features.CompanySetup
 
             if (dto.UserTenantAccess != null)
             {
-                var existingUta = await _context.UserTenantAccesses
+                var utaQuery = _context.UserTenantAccesses.AsQueryable();
+                if (_currentUserService.IsSuperAdmin) utaQuery = utaQuery.IgnoreQueryFilters();
+
+                var existingUta = await utaQuery
                     .Include(u => u.User)
                     .Where(u => u.TenantId == id)
                     .ToListAsync();
@@ -723,7 +779,10 @@ namespace ERP.Features.CompanySetup
                     }
                     else
                     {
-                        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == utaDto.Email);
+                        var userQuery = _context.Users.AsQueryable();
+                        if (_currentUserService.IsSuperAdmin) userQuery = userQuery.IgnoreQueryFilters();
+
+                        var user = await userQuery.FirstOrDefaultAsync(u => u.Email == utaDto.Email);
                         
                         if (user == null)
                         {
@@ -759,7 +818,7 @@ namespace ERP.Features.CompanySetup
 
             await _context.SaveChangesAsync();
 
-            var currentRv = await _context.Tenants.AsNoTracking()
+            var currentRv = await query.AsNoTracking()
                 .Where(t => t.Id == id)
                 .Select(t => t.RowVersion)
                 .FirstAsync();
@@ -768,7 +827,10 @@ namespace ERP.Features.CompanySetup
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+            var query = _context.Tenants.AsQueryable();
+            if (_currentUserService.IsSuperAdmin) query = query.IgnoreQueryFilters();
+
+            var tenant = await query.FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
 
             if (tenant == null)
             {
