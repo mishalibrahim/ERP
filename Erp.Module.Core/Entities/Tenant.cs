@@ -2,13 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {
-    public class Tenant
+    public class Tenant : BaseEntity
     {
             // STEP 1: General Information
-            public string Id { get; set; } = Guid.NewGuid().ToString();
+
             public string CompanyName { get; set; } = string.Empty;
             public string? TradeName { get; set; }
             public string CompanyCode { get; set; } = string.Empty;
@@ -24,12 +25,6 @@ namespace Erp.Module.Core.Entities
 
             public string Status { get; set; } = "Draft";
             
-            public bool IsActive { get; set; } = true;
-            public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-            public DateTime? UpdatedAt { get; set; }
-
-            [System.ComponentModel.DataAnnotations.Timestamp]
-            public byte[] RowVersion { get; set; }
 
             // FLATTENED 1-TO-1 SECTIONS (Owned Types)
             public FinancialSetup Financials { get; set; } = new();         // Step 2
@@ -44,7 +39,6 @@ namespace Erp.Module.Core.Entities
 
             // RELATIONAL 1-TO-MANY SECTIONS (Separate Tables)
             public List<BankAccount> BankAccounts { get; set; } = new();    // Step 9
-            public ICollection<TaxGroup> TaxGroups { get; set; } = new List<TaxGroup>();
             public ICollection<DocumentNumberSeries> DocumentNumberSeries { get; set; } = new List<DocumentNumberSeries>();
             public ICollection<PostingGroup> PostingGroups { get; set; } = new List<PostingGroup>();
             public ICollection<UserTenantAccess> UserTenantAccesses { get; set; } = new List<UserTenantAccess>();

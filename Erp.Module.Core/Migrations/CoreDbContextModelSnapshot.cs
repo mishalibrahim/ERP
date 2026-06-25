@@ -53,9 +53,8 @@ namespace Erp.Module.Core.Migrations
                     b.Property<string>("SwiftCode")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -87,15 +86,44 @@ namespace Erp.Module.Core.Migrations
                     b.Property<string>("Suffix")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
 
                     b.ToTable("DocumentNumberSeries");
+                });
+
+            modelBuilder.Entity("Erp.Module.Core.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Resource")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Module", "Action", "Resource")
+                        .IsUnique();
+
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.PostingGroup", b =>
@@ -123,9 +151,8 @@ namespace Erp.Module.Core.Migrations
                     b.Property<string>("ReceivablesAccountId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -138,65 +165,62 @@ namespace Erp.Module.Core.Migrations
                     b.ToTable("PostingGroups");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
+            modelBuilder.Entity("Erp.Module.Core.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemRole")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("TaxGroups");
+                    b.ToTable("Roles");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxRate", b =>
+            modelBuilder.Entity("Erp.Module.Core.Entities.RolePermission", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("EffectiveFrom")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EffectiveTo")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("RatePercentage")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("TaxGroupId")
+                    b.Property<Guid>("PermissionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("datetime2");
 
-                    b.HasIndex("TaxGroupId");
+                    b.Property<Guid?>("GrantedBy")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.ToTable("TaxRates");
+                    b.HasKey("RoleId", "PermissionId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CompanyCode")
                         .IsRequired()
@@ -212,6 +236,9 @@ namespace Erp.Module.Core.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Emirate")
                         .IsRequired()
@@ -237,6 +264,12 @@ namespace Erp.Module.Core.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("PlaceOfIncorporation")
                         .HasColumnType("nvarchar(max)");
 
@@ -256,9 +289,6 @@ namespace Erp.Module.Core.Migrations
                     b.Property<string>("TradeName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyCode")
@@ -269,11 +299,15 @@ namespace Erp.Module.Core.Migrations
 
             modelBuilder.Entity("Erp.Module.Core.Entities.User", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -286,15 +320,18 @@ namespace Erp.Module.Core.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsSuperAdmin")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -303,12 +340,14 @@ namespace Erp.Module.Core.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -326,19 +365,18 @@ namespace Erp.Module.Core.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("TenantId");
 
@@ -380,34 +418,40 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
+            modelBuilder.Entity("Erp.Module.Core.Entities.Role", b =>
                 {
                     b.HasOne("Erp.Module.Core.Entities.Tenant", "Tenant")
-                        .WithMany("TaxGroups")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("TenantId");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxRate", b =>
+            modelBuilder.Entity("Erp.Module.Core.Entities.RolePermission", b =>
                 {
-                    b.HasOne("Erp.Module.Core.Entities.TaxGroup", "TaxGroup")
-                        .WithMany("TaxRates")
-                        .HasForeignKey("TaxGroupId")
+                    b.HasOne("Erp.Module.Core.Entities.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("TaxGroup");
+                    b.HasOne("Erp.Module.Core.Entities.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
                 {
                     b.OwnsOne("Erp.Module.Core.Entities.CorporateTaxSetup", "CorporateTax", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("CorporateTaxTrn")
                                 .HasColumnType("nvarchar(max)");
@@ -437,8 +481,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.DocumentManagement", "Documents", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("EmiratesIdUrl")
                                 .HasColumnType("nvarchar(max)");
@@ -465,8 +509,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.FinancialSetup", "Financials", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("AccountingMethod")
                                 .IsRequired()
@@ -502,8 +546,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.LocalizationSetup", "Localization", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.PrimitiveCollection<string>("CommunicationLanguages")
                                 .IsRequired()
@@ -535,8 +579,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.SystemControls", "Controls", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<bool>("ApprovalWorkflow")
                                 .HasColumnType("bit");
@@ -563,8 +607,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.TaxSetup", "TaxConfiguration", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<Guid?>("DefaultVatRateId")
                                 .HasColumnType("uniqueidentifier");
@@ -585,8 +629,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.AddressDetails", "BillingAddress", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("AddressLine1")
                                 .IsRequired()
@@ -628,8 +672,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.AddressDetails", "RegisteredAddress", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("AddressLine1")
                                 .IsRequired()
@@ -671,8 +715,8 @@ namespace Erp.Module.Core.Migrations
 
                     b.OwnsOne("Erp.Module.Core.Entities.VatSetup", "VatDetails", b1 =>
                         {
-                            b1.Property<string>("TenantId")
-                                .HasColumnType("nvarchar(450)");
+                            b1.Property<Guid>("TenantId")
+                                .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("FilingFrequency")
                                 .IsRequired()
@@ -752,6 +796,12 @@ namespace Erp.Module.Core.Migrations
 
             modelBuilder.Entity("Erp.Module.Core.Entities.UserTenantAccess", b =>
                 {
+                    b.HasOne("Erp.Module.Core.Entities.Role", "Role")
+                        .WithMany("UserTenantAccesses")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Erp.Module.Core.Entities.Tenant", "Tenant")
                         .WithMany("UserTenantAccesses")
                         .HasForeignKey("TenantId")
@@ -764,14 +814,23 @@ namespace Erp.Module.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Role");
+
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
+            modelBuilder.Entity("Erp.Module.Core.Entities.Permission", b =>
                 {
-                    b.Navigation("TaxRates");
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("Erp.Module.Core.Entities.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("UserTenantAccesses");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
@@ -781,8 +840,6 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("DocumentNumberSeries");
 
                     b.Navigation("PostingGroups");
-
-                    b.Navigation("TaxGroups");
 
                     b.Navigation("UserTenantAccesses");
                 });

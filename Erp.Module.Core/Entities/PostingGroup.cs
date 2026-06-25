@@ -1,4 +1,5 @@
 using System;
+using Erp.Shared.Entities;
 
 namespace Erp.Module.Core.Entities
 {
@@ -6,7 +7,7 @@ namespace Erp.Module.Core.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public string TenantId { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
         public Tenant? Tenant { get; set; }
 
         public string GroupName { get; set; } = string.Empty;

@@ -1,9 +1,10 @@
+using Erp.Module.Core;
 using Erp.Module.Core.Data;
 using Erp.Module.Core.Entities;
+using Erp.Module.GL;
 using Erp.Shared.Interfaces;
-using ERP.Interfaces;
-using ERP.Middleware;
-using ERP.Services;
+using ERP.Features;
+using ERP.Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,24 +13,20 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Register our Current User Service so any module can ask "Who is running this code?"
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
+// Register Modules
+builder.Services.AddCoreModule(builder.Configuration);
+builder.Services.AddGlModuleServices(builder.Configuration);
 
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<ICompanySetupService, CompanySetupService>();
+// Register Features
+builder.Services.AddFeatureServices();
 
-// db connections
-builder.Services.AddDbContext<CoreDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-    sqlOptions => sqlOptions.MigrationsAssembly("Erp.Module.Core"));
-    options.EnableSensitiveDataLogging();
-    options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
-});
 
-builder.Services.AddControllers();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new ERP.Infrastructure.Converters.NullableDateTimeConverter());
+    });
 
 // Configure CORS to allow the frontend at http://localhost:5173
 builder.Services.AddCors(options =>
@@ -107,3 +104,4 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+

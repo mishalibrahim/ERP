@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+  </Folder>
   <Project Path="Erp.Module.Core/Erp.Module.Core.csproj" Id="6a51aedd-b3f5-47f8-a11a-eae344c6029d" />
   <Project Path="Erp.Module.GL/Erp.Module.GL.csproj" />
   <Project Path="Erp.Shared/Erp.Shared.csproj" />
