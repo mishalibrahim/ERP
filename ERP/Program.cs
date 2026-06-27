@@ -94,8 +94,15 @@ using (var scope = app.Services.CreateScope())
     // We try-catch this so if the database is offline, the app still launches and shows the error
     try
     {
+        var coreDbContext = scope.ServiceProvider.GetRequiredService<Erp.Module.Core.Data.CoreDbContext>();
+        await coreDbContext.Database.MigrateAsync();
+
+        var glDbContext = scope.ServiceProvider.GetRequiredService<Erp.Module.GL.Data.GlDbContext>();
+        await glDbContext.Database.MigrateAsync();
+
         await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
-        Console.WriteLine("Database seeding completed successfully.");
+        await Erp.Module.GL.Data.GlDatabaseSeeder.SeedAsync(scope.ServiceProvider);
+        Console.WriteLine("Database migration and seeding completed successfully.");
     }
     catch (Exception ex)
     {

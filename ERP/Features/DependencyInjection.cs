@@ -5,6 +5,7 @@ using ERP.Features.Dimensions;
 using ERP.Features.GlAccounts;
 using ERP.Features.Taxes;
 using ERP.Features.JournalEntries;
+using ERP.Features.GeneralLedger;
 using Erp.Module.Core.Entities;
 using Erp.Shared.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -33,6 +34,7 @@ namespace ERP.Features
             services.AddScoped<ITaxService, TaxService>();
             services.AddScoped<IDimensionService, DimensionService>();
             services.AddScoped<IJournalEntryService, JournalEntryService>();
+            services.AddScoped<IGeneralLedgerService, GeneralLedgerService>();
 
             return services;
         }

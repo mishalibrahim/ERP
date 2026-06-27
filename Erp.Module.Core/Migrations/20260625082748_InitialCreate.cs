@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Erp.Module.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class AddBaseEntityAndConcurrency : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -207,27 +207,6 @@ namespace Erp.Module.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TaxGroups",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TaxGroups", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TaxGroups_Tenants_TenantId",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -278,28 +257,6 @@ namespace Erp.Module.Core.Migrations
                         name: "FK_RolePermissions_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TaxRates",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TaxGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RatePercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    EffectiveFrom = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EffectiveTo = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TaxRates", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TaxRates_TaxGroups_TaxGroupId",
-                        column: x => x.TaxGroupId,
-                        principalTable: "TaxGroups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -369,16 +326,6 @@ namespace Erp.Module.Core.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TaxGroups_TenantId",
-                table: "TaxGroups",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaxRates_TaxGroupId",
-                table: "TaxRates",
-                column: "TaxGroupId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Tenants_CompanyCode",
                 table: "Tenants",
                 column: "CompanyCode",
@@ -421,16 +368,10 @@ namespace Erp.Module.Core.Migrations
                 name: "RolePermissions");
 
             migrationBuilder.DropTable(
-                name: "TaxRates");
-
-            migrationBuilder.DropTable(
                 name: "UserTenantAccesses");
 
             migrationBuilder.DropTable(
                 name: "Permissions");
-
-            migrationBuilder.DropTable(
-                name: "TaxGroups");
 
             migrationBuilder.DropTable(
                 name: "Roles");

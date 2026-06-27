@@ -13,7 +13,8 @@ namespace Erp.Shared.Enums
     {
         Ledger,
         Customer,
-        Vendor
+        Vendor,
+        Bank
     }
 
     public enum GlPostingType
@@ -28,5 +29,32 @@ namespace Erp.Shared.Enums
         Project,
         Property,
         Department
+    }
+
+    public enum JournalVoucherStatus
+    {
+        Draft,
+        PendingApproval,
+        Approved,
+        Posted,
+        Rejected,
+        Reversed
+    }
+
+    public enum JournalVoucherType
+    {
+        General,
+        Adjusting,
+        Accrual,
+        Reversing,
+        Opening
+    }
+
+    public enum JournalVoucherApprovalStage
+    {
+        Initiator,
+        FinanceReview,
+        CfoApprove,
+        Posted
     }
 }

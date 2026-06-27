@@ -79,6 +79,28 @@ namespace Erp.Module.GL.Data
                 .Property(l => l.Credit)
                 .HasPrecision(18, 4);
 
+            modelBuilder.Entity<JournalEntry>()
+                .Property(j => j.ExchangeRate)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.ReversedVoucher)
+                .WithMany()
+                .HasForeignKey(j => j.ReversedVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.ReversingVoucher)
+                .WithMany()
+                .HasForeignKey(j => j.ReversingVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JournalEntryLine>()
+                .HasOne(l => l.OffsetAccount)
+                .WithMany()
+                .HasForeignKey(l => l.OffsetAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<TaxRate>()
                 .Property(r => r.RatePercentage)
                 .HasPrecision(18, 4);
