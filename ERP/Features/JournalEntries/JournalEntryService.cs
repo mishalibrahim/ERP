@@ -1,6 +1,7 @@
 using Erp.Module.GL.Data;
 using Erp.Module.GL.Entities;
 using ERP.Features.JournalEntries.DTOs;
+using ERP.Features.GeneralLedger;
 using Erp.Shared.Enums;
 using Erp.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,13 @@ namespace ERP.Features.JournalEntries
     {
         private readonly GlDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IGeneralLedgerService _glService;
 
-        public JournalEntryService(GlDbContext context, ICurrentUserService currentUserService)
+        public JournalEntryService(GlDbContext context, ICurrentUserService currentUserService, IGeneralLedgerService glService)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _glService = glService;
         }
 
         public async Task<List<JournalEntryDto>> GetAllAsync()
@@ -147,6 +150,59 @@ namespace ERP.Features.JournalEntries
             return true;
         }
 
+        public async Task<JournalEntryDto> CopyVoucherAsync(Guid id)
+        {
+            var source = await _context.JournalEntries
+                .Include(j => j.Lines)
+                .FirstOrDefaultAsync(j => j.Id == id);
+
+            if (source == null) throw new InvalidOperationException("Voucher not found.");
+
+            var tenantId = _currentUserService.TenantId
+                ?? throw new UnauthorizedAccessException("Tenant ID is required.");
+
+            var voucherNo = await GenerateVoucherNoAsync(DateTime.UtcNow);
+
+            var copy = new JournalEntry
+            {
+                TenantId = tenantId,
+                VoucherNo = voucherNo,
+                JournalName = source.JournalName,
+                Date = DateTime.UtcNow.Date,
+                Currency = source.Currency,
+                JournalType = source.JournalType,
+                CostCenter = source.CostCenter,
+                Department = source.Department,
+                ExchangeRate = source.ExchangeRate,
+                Description = $"Copy of {source.VoucherNo} — {source.Description}",
+                InternalNotes = source.InternalNotes,
+                Status = JournalVoucherStatus.Draft,
+                CurrentApprovalStage = JournalVoucherApprovalStage.Initiator,
+                ApprovalHistoryJson = "[]",
+                AttachmentsJson = "[]"
+            };
+
+            foreach (var line in source.Lines)
+            {
+                copy.Lines.Add(new JournalEntryLine
+                {
+                    TenantId = tenantId,
+                    AccountType = line.AccountType,
+                    GlAccountId = line.GlAccountId,
+                    Description = line.Description,
+                    CostCenter = line.CostCenter,
+                    Debit = line.Debit,
+                    Credit = line.Credit,
+                    OffsetType = line.OffsetType,
+                    OffsetAccountId = line.OffsetAccountId
+                });
+            }
+
+            _context.JournalEntries.Add(copy);
+            await _context.SaveChangesAsync();
+            return MapToDto(copy);
+        }
+
         public async Task<(bool Success, List<string> Errors)> ValidateVoucherAsync(Guid id)
         {
             var errors = new List<string>();
@@ -168,8 +224,13 @@ namespace ERP.Features.JournalEntries
                 errors.Add($"Journal is unbalanced: Total Debits (AED {(totalDebit * entry.ExchangeRate):F2}) must equal Total Credits (AED {(totalCredit * entry.ExchangeRate):F2}).");
             }
 
-            // 2. Open Period Check (Jan 2026 - Dec 2026 open)
-            if (entry.Date.Year != 2026)
+            // 2. Period Lock Check
+            var isPeriodLocked = await _glService.IsPeriodLockedAsync(entry.Date);
+            if (isPeriodLocked)
+            {
+                errors.Add($"The period {entry.Date:MMMM yyyy} is locked. Please contact your Finance Manager to unlock it.");
+            }
+            else if (entry.Date.Year != 2026)
             {
                 errors.Add($"Voucher Date {entry.Date:yyyy-MM-dd} falls outside the open fiscal period (Year 2026).");
             }
@@ -382,6 +443,11 @@ namespace ERP.Features.JournalEntries
 
             if (entry.Status != JournalVoucherStatus.Approved)
                 throw new InvalidOperationException("Voucher must be Approved before posting.");
+
+            // Period Lock check at posting time
+            var isPeriodLocked = await _glService.IsPeriodLockedAsync(entry.Date);
+            if (isPeriodLocked)
+                throw new InvalidOperationException($"The period {entry.Date:MMMM yyyy} is locked and cannot accept new postings.");
 
             entry.Status = JournalVoucherStatus.Posted;
             entry.IsPosted = true; // Sync base field

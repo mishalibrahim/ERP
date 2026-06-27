@@ -76,6 +76,20 @@ namespace ERP.Features.JournalEntries
             }
         }
 
+        [HttpPost("{id}/copy")]
+        public async Task<IActionResult> CopyVoucher(Guid id)
+        {
+            try
+            {
+                var result = await _journalEntryService.CopyVoucherAsync(id);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("{id}/validate")]
         public async Task<IActionResult> ValidateVoucher(Guid id)
         {

@@ -11,6 +11,7 @@ namespace ERP.Features.JournalEntries
         Task<JournalEntryDto?> GetByIdAsync(Guid id);
         Task<JournalEntryDto> SaveAsync(CreateJournalEntryDto dto, Guid? id);
         Task<bool> DeleteAsync(Guid id);
+        Task<JournalEntryDto> CopyVoucherAsync(Guid id);
         Task<(bool Success, List<string> Errors)> ValidateVoucherAsync(Guid id);
         Task<List<object>> SimulateVoucherAsync(Guid id);
         Task<JournalEntryDto> SendForApprovalAsync(Guid id);
