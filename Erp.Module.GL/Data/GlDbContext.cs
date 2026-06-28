@@ -24,6 +24,7 @@ namespace Erp.Module.GL.Data
         public DbSet<JournalEntryLine> JournalEntryLines { get; set; }
         public DbSet<TaxGroup> TaxGroups { get; set; }
         public DbSet<TaxRate> TaxRates { get; set; }
+        public DbSet<LockedPeriod> LockedPeriods { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +51,13 @@ namespace Erp.Module.GL.Data
 
             modelBuilder.Entity<TaxRate>()
                 .HasQueryFilter(x => x.TaxGroup != null && x.TaxGroup.TenantId == _currentUser.TenantId);
+
+            modelBuilder.Entity<LockedPeriod>()
+                .HasQueryFilter(x => x.TenantId == _currentUser.TenantId);
+
+            modelBuilder.Entity<LockedPeriod>()
+                .HasIndex(lp => new { lp.TenantId, lp.Year, lp.Month })
+                .IsUnique();
                 
             // ──────────────────────────────────────
             // Additional Constraints
@@ -78,6 +86,28 @@ namespace Erp.Module.GL.Data
             modelBuilder.Entity<JournalEntryLine>()
                 .Property(l => l.Credit)
                 .HasPrecision(18, 4);
+
+            modelBuilder.Entity<JournalEntry>()
+                .Property(j => j.ExchangeRate)
+                .HasPrecision(18, 4);
+
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.ReversedVoucher)
+                .WithMany()
+                .HasForeignKey(j => j.ReversedVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JournalEntry>()
+                .HasOne(j => j.ReversingVoucher)
+                .WithMany()
+                .HasForeignKey(j => j.ReversingVoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<JournalEntryLine>()
+                .HasOne(l => l.OffsetAccount)
+                .WithMany()
+                .HasForeignKey(l => l.OffsetAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<TaxRate>()
                 .Property(r => r.RatePercentage)

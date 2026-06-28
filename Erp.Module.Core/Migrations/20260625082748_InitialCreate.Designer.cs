@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Erp.Module.Core.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20260622075054_AddBaseEntityAndConcurrency")]
-    partial class AddBaseEntityAndConcurrency
+    [Migration("20260625082748_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -217,60 +217,6 @@ namespace Erp.Module.Core.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions");
-                });
-
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("TaxGroups");
-                });
-
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxRate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("EffectiveFrom")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EffectiveTo")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("RatePercentage")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("TaxGroupId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaxGroupId");
-
-                    b.ToTable("TaxRates");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
@@ -501,28 +447,6 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
-                {
-                    b.HasOne("Erp.Module.Core.Entities.Tenant", "Tenant")
-                        .WithMany("TaxGroups")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxRate", b =>
-                {
-                    b.HasOne("Erp.Module.Core.Entities.TaxGroup", "TaxGroup")
-                        .WithMany("TaxRates")
-                        .HasForeignKey("TaxGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TaxGroup");
                 });
 
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
@@ -912,11 +836,6 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("UserTenantAccesses");
                 });
 
-            modelBuilder.Entity("Erp.Module.Core.Entities.TaxGroup", b =>
-                {
-                    b.Navigation("TaxRates");
-                });
-
             modelBuilder.Entity("Erp.Module.Core.Entities.Tenant", b =>
                 {
                     b.Navigation("BankAccounts");
@@ -924,8 +843,6 @@ namespace Erp.Module.Core.Migrations
                     b.Navigation("DocumentNumberSeries");
 
                     b.Navigation("PostingGroups");
-
-                    b.Navigation("TaxGroups");
 
                     b.Navigation("UserTenantAccesses");
                 });

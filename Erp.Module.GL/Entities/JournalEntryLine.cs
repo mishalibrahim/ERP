@@ -1,5 +1,6 @@
 using System;
 using Erp.Shared.Entities;
+using Erp.Shared.Enums;
 
 namespace Erp.Module.GL.Entities
 {
@@ -22,5 +23,14 @@ namespace Erp.Module.GL.Entities
         
         public Guid? DimensionId { get; set; }
         public Dimension? Dimension { get; set; }
+
+        // Extended Line Fields
+        public GlAccountType AccountType { get; set; } = GlAccountType.Ledger;
+        public string? Description { get; set; }
+        public string? CostCenter { get; set; }
+
+        public GlAccountType? OffsetType { get; set; }
+        public Guid? OffsetAccountId { get; set; }
+        public GlAccount? OffsetAccount { get; set; }
     }
 }
